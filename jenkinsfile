@@ -35,7 +35,8 @@ pipeline {
         stage('Upload to S3') {
             steps {
                 sh '''
-                    aws s3 cp target/student-management.war s3://krushna.online123123/
+                    aws s3 cp target/student-management.war \
+                    s3://krushna.online123123/
                 '''
             }
         }
@@ -68,11 +69,58 @@ pipeline {
         stage('Push to ECR') {
             steps {
                 sh '''
-                    aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 267850879086.dkr.ecr.us-west-2.amazonaws.com
+                    aws ecr get-login-password --region us-west-2 | \
+                    docker login \
+                    --username AWS \
+                    --password-stdin 267850879086.dkr.ecr.us-west-2.amazonaws.com
 
-                    docker tag student:latest 267850879086.dkr.ecr.us-west-2.amazonaws.com/student:latest
+                    docker tag student:latest \
+                    267850879086.dkr.ecr.us-west-2.amazonaws.com/student:latest
 
-                    docker push 267850879086.dkr.ecr.us-west-2.amazonaws.com/student:latest
+                    docker push \
+                    267850879086.dkr.ecr.us-west-2.amazonaws.com/student:latest
+                '''
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir('terraform') {
+                    sh '''
+                        terraform init
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir('terraform') {
+                    sh '''
+                        terraform plan
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir('terraform') {
+                    sh '''
+                        terraform apply -auto-approve
+                    '''
+                }
+            }
+        }
+
+        stage('Verify EKS Cluster') {
+            steps {
+                sh '''
+                    aws eks describe-cluster \
+                    --name my-eks-cluster \
+                    --region us-west-2
+
+                    echo "EKS cluster is available"
                 '''
             }
         }
@@ -80,9 +128,17 @@ pipeline {
         stage('Deployment on Kubernetes') {
             steps {
                 sh '''
+                    echo "Updating kubeconfig..."
+
                     aws eks update-kubeconfig \
                     --name my-eks-cluster \
                     --region us-west-2
+
+                    echo "Checking Kubernetes nodes..."
+
+                    kubectl get nodes
+
+                    echo "Applying Kubernetes manifests..."
 
                     kubectl apply -f k8s/
 
@@ -90,8 +146,14 @@ pipeline {
 
                     sleep 30
 
+                    echo "Pods:"
                     kubectl get pods
+
+                    echo "Services:"
                     kubectl get svc -o wide
+
+                    echo "Deployments:"
+                    kubectl get deployments
                 '''
             }
         }
