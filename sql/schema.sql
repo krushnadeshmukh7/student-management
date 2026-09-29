@@ -17,3 +17,4 @@ INSERT INTO students (name, email, course, marks) VALUES
     ('Aarav Sharma',  'aarav.sharma@example.com',  'Computer Science', 88.5),
     ('Priya Nair',    'priya.nair@example.com',    'Information Tech', 91.0),
     ('Rohan Mehta',   'rohan.mehta@example.com',   'Electronics',      76.2);
+
