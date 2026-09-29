@@ -3,7 +3,7 @@ name: student-management ci-cd
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   ci-cd:
