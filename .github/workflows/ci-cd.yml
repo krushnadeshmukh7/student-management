@@ -50,3 +50,55 @@ jobs:
           echo "Quality Gate: $STATUS"
           [ "$STATUS" = "OK" ] || exit 1
 
+          - name: Docker Build 
+        run: |
+          docker build -t student .
+          docker images
+
+      - name: Trivy Install 
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget 
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | \
+            gpg --dearmor | \
+            sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | \
+            sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      - name: Scan Image Using Trivy
+        run: trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 student:latest
+
+      - name: Push Image to ECR 
+        run: |
+          aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 267850879086.dkr.ecr.us-west-2.amazonaws.com         
+          docker tag student:latest 267850879086.dkr.ecr.us-west-2.amazonaws.com/student:latest
+          docker push 267850879086.dkr.ecr.us-west-2.amazonaws.com/student:latest
+
+      - name: Terraform Installation
+        uses: hashicorp/setup-terraform@v4
+        with:
+          version: latest
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Apply 
+        run: terraform apply -auto-approve
+
+      - name: kubectl install
+        uses: azure/setup-kubectl@v4
+
+      - name: Deployment on Kubernetes
+        run: |
+          aws eks update-kubeconfig --name eks-cluster-mayur --region us-west-2
+          kubectl apply -f k8s/
+          sleep 30
+          kubectl get pods
+          kubectl get svc -o wide
+           
+
