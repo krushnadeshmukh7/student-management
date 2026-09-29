@@ -21,7 +21,10 @@ jobs:
           cache: maven
 
       - name: Build Stage
-        run: mvn clean package
+        run: |
+          mvn clean package
+          echo "Checking MySQL JDBC driver in WAR..."
+          jar tf target/*.war | grep mysql
 
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v6
