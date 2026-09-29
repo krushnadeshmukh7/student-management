@@ -95,7 +95,7 @@ jobs:
 
       - name: Deployment on Kubernetes
         run: |
-          aws eks update-kubeconfig --name aws_eks_cluster --region us-west-2
+          aws eks update-kubeconfig --name my-eks-cluster --region us-west-2
           kubectl apply -f k8s/
           sleep 30
           kubectl get pods
