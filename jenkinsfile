@@ -6,7 +6,7 @@ pipeline {
 
     tools {
         maven 'mvn'
-        terraform 'tf' 
+        terraform 'tf'
     }
 
     stages {
@@ -15,8 +15,6 @@ pipeline {
             steps {
                 git branch: 'main',
                     url: 'https://github.com/krushnadeshmukh7/student-management.git'
-
-                echo "Cloning is successful"
             }
         }
 
@@ -24,3 +22,6 @@ pipeline {
             steps {
                 sh 'mvn clean package'
             }
+        }
+    }
+}
